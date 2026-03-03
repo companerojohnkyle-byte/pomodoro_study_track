@@ -1,52 +1,81 @@
-import time
+import tkinter as tk
+from tkinter import messagebox
 
 total_sessions = 0
+timer_running = False
 
-def timer(minutes, label):
-    seconds = minutes * 60
-    while seconds > 0:
+def countdown(seconds, label):
+    global timer_running
+
+    if seconds >= 0 and timer_running:
         mins = seconds // 60
         secs = seconds % 60
-        print(f"{label} Time: {mins}:{secs:02}", end="\r")
-        time.sleep(1)
-        seconds -= 1
-    print(f"\n{label} ended!\n")
+        timer_label.config(text=f"{label} Time: {mins}:{secs:02}")
+        root.after(1000, countdown, seconds - 1, label)
 
-def study_session():
-    global total_sessions
-    total_sessions += 1
+    else:
+        if timer_running:
+            timer_label.config(text=f"{label} ended!")
+            if label == "Study":
+                messagebox.showinfo("It's Break Time", "Great job! Time for a 5-minute break!")
+                countdown(5 * 60, "Break")
+            else:
+                timer_running = False
+                timer_label.config(text="Session Complete!")
 
-    print("\n • STUDY SESSION • ")
-    minutes = input("Enter your study time (Default is 25 Mins): ")
+def start_session():
+    global total_sessions, timer_running
 
-    if minutes:
-        minutes = int(minutes)
+    if timer_running:
+        return
 
-    print(f"Starting {minutes}-minute study session. Stay focused! ")
-    timer(minutes, "Study")
+    try:
+        minutes = entry.get()
+        if minutes == "":
+            minutes = 25
+        else:
+            minutes = int(minutes)
 
-    print("Great job! It's Time for a 5-minute break ")
-    timer(5, "Use your break time wisely.")
+        total_sessions += 1
+        timer_running = True
+        countdown(minutes * 60, "Study")
+
+    except ValueError:
+        messagebox.showerror("Invalid Number", "Please enter a valid number.")
 
 def show_stats():
-    print("\n • YOUR STUDY STATS • ")
-    print(f"Total Sessions Progress: {total_sessions}")
-    print("")
+    messagebox.showinfo("Study Stats",
+                        f"Total Study Sessions Completed: {total_sessions}")
 
-while True:
-    print("|== • SIMPLE STUDY TIMER • ===|")
-    print("| 1. Start Study Session      |")
-    print("| 2. View Stats               |")
-    print("| 3. Exit                     |")
-    print("|_____________________________|")
-    choice = input("Choose an option: ")
+def stop_timer():
+    global timer_running
+    timer_running = False
+    timer_label.config(text="Timer Stopped")
 
-    if choice == "1":
-        study_session()
-    elif choice == "2":
-        show_stats()
-    elif choice == "3":
-        print("Good luck with your studies! ")
-        break
-    else:
-        print("Invalid choice! Please enter 1, 2, or 3.\n")
+root = tk.Tk()
+root.title("Simple Study Timer")
+root.geometry("350x300")
+root.resizable(False, False)
+
+title_label = tk.Label(root, text="SIMPLE STUDY TIMER", font=("Arial", 16, "bold"))
+title_label.pack(pady=10)
+
+entry_label = tk.Label(root, text="Enter Study Time (minutes):")
+entry_label.pack()
+
+entry = tk.Entry(root)
+entry.pack(pady=5)
+
+start_button = tk.Button(root, text="Start Study Session", command=start_session)
+start_button.pack(pady=5)
+
+stats_button = tk.Button(root, text="View Stats", command=show_stats)
+stats_button.pack(pady=5)
+
+stop_button = tk.Button(root, text="Stop Timer", command=stop_timer)
+stop_button.pack(pady=5)
+
+timer_label = tk.Label(root, text="", font=("Arial", 14))
+timer_label.pack(pady=20)
+
+root.mainloop()
